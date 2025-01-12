@@ -743,10 +743,19 @@ function Display-ToastNotification() {
         Exit 0
     }
     catch { 
+        $DisplayError = $_
+        Write-Output -InputObject "`n"
         Write-Log -Message "Something went wrong when displaying the toast notification" -Level Error
         Write-Log -Message "Make sure the script is running as the logged on user" -Level Error
+        Write-Output -InputObject "`n"
         # Using Write-Output for sending status to IME log when used with Endpoint Analytics in Intune
         Write-Output "Something went wrong when displaying the toast notification. Make sure the script is running as the logged on user"
+        Write-Output "The error details are: `n"
+
+       Write-Log -Message "`nMessage:`n`t$($DisplayError.Exception.Message)`n"
+       Write-Log -Message "`nStatement:`n`t$($DisplayError.InvocationInfo.Statement)`n"
+       Write-Log -Message "`nPosition:`n`t$($DisplayError.InvocationInfo.PositionMessage)`n"
+       Write-Log -Message "`nStack Trace:`n`t$($DisplayError.ScriptStackTrace)`n"
         Exit 1 
     }
 }
