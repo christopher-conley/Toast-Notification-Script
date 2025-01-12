@@ -2052,7 +2052,7 @@ if ($LimitToastToRunEveryMinutesEnabled -eq "True") {
 }
 
 # Downloading images into user's temp folder if images are hosted online
-if (($LogoImageFileName.StartsWith("https://")) -OR ($LogoImageFileName.StartsWith("http://"))) {
+if (($null -ne $LogoImageFileName) -and (($LogoImageFileName.StartsWith("https://")) -OR ($LogoImageFileName.StartsWith("http://")))) {
     Write-Log -Message "ToastLogoImage appears to be hosted online. Will need to download the file"
     # Testing to see if image at the provided URL indeed is available
     try { $testOnlineLogoImage = Invoke-WebRequest -Uri $LogoImageFileName -UseBasicParsing } catch { <# nothing to see here. Used to make webrequest silent #> }
@@ -2071,7 +2071,7 @@ if (($LogoImageFileName.StartsWith("https://")) -OR ($LogoImageFileName.StartsWi
         Write-Log -Level Error -Message "The picture supposedly located on $LogoImageFileName is not available"
     }
 }
-if (($HeroImageFileName.StartsWith("https://")) -OR ($HeroImageFileName.StartsWith("http://"))) {
+if (($null -ne $HeroImageFileName) -and  (($HeroImageFileName.StartsWith("https://")) -OR ($HeroImageFileName.StartsWith("http://")))) {
     Write-Log -Message "ToastHeroImage appears to be hosted online. Will need to download the file"
     # Testing to see if image at the provided URL indeed is available
     try { $testOnlineHeroImage = Invoke-WebRequest -Uri $HeroImageFileName -UseBasicParsing } catch { <# nothing to see here. Used to make webrequest silent #> }
