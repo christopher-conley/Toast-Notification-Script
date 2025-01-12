@@ -12,7 +12,6 @@
 	<Option Name="ADPasswordExpirationText" Enabled="False" />	<!-- Adds an additional group to the toast with text -->
 	<Option Name="ADPasswordExpirationDays" Value="90" />	<!-- How many days in advance shall the toast start reminding the users  -->
 	<Option Name="RunPackageID" Enabled="False" Value="KR100907" /> <!-- Will enable the toast to run any ConfigMgr PackageID through a custom protocol -->
-	<Option Name="RunApplicationID" Enabled="False" Value="ScopeId_A9117680-D054-482B-BC97-532E6CBD0E6B/Application_fd55f35c-4e34-4490-a3ec-ee0b79233ec6" /> <!-- Will enable the toast to run any ConfigMgr ApplicationID through a custom protocol -->
 	<Option Name="RunUpdateID" Enabled="False" Value="4561600" /> <!-- Will enable the toast to run any ConfigMgr Update ID through a custom protocol. Configure the value to the relevant KB-article ID -->
 	<Option Name="RunUpdateTitle" Enabled="False" Value="" /> <!-- Will enable the toast to run any ConfigMgr Update Name through a custom protocol -->
 	<Option Name="Deadline" Enabled="False" Value="30-09-2019 08:00" />	<!-- Adds an additional group to the toast with text about the deadline of the OSUpgrade -->

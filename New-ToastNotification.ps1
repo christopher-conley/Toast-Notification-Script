@@ -776,8 +776,9 @@ function Write-CustomActionRegistry() {
     [CmdletBinding()]
     param (
         [Parameter(Position="0")]
-        [ValidateSet("ToastRunApplicationID","ToastRunPackageID","ToastRunUpdateID","ToastReboot")]
-        [string]$ActionType,
+        [ValidateSet("ToastRunApplicationID", "ToastRunPackageID", "ToastRunUpdateID", "ToastReboot", "ToastRunPSBase64")]
+        [string]
+        $ActionType,
         [Parameter(Position="1")]
         [string]$RegCommandPath = $global:CustomScriptsPath
     )
@@ -843,6 +844,20 @@ function Write-CustomActionRegistry() {
                 Write-Log -Level Error -Message "Error message: $ErrorMessage"
             }
         }
+        ToastRunPSBase64 {
+            # Build out registry for custom action for running PowerShell command encoded as Base64 via the action button
+            try {
+                New-Item "HKCU:\Software\Classes\$($ActionType)\shell\open\command" -Force -ErrorAction SilentlyContinue | Out-Null
+                New-ItemProperty -LiteralPath "HKCU:\Software\Classes\$($ActionType)" -Name 'URL Protocol' -Value '' -PropertyType String -Force -ErrorAction SilentlyContinue | Out-Null
+                New-ItemProperty -LiteralPath "HKCU:\Software\Classes\$($ActionType)" -Name '(default)' -Value "URL:$($ActionType) Protocol" -PropertyType String -Force -ErrorAction SilentlyContinue | Out-Null
+                $RegCommandValue = $RegCommandPath + '\' + "$($ActionType).cmd `"%1`""
+                New-ItemProperty -LiteralPath "HKCU:\Software\Classes\$($ActionType)\shell\open\command" -Name '(default)' -Value $RegCommandValue -PropertyType String -Force -ErrorAction SilentlyContinue | Out-Null
+            } catch {
+                Write-Log -Level Error "Failed to create the $ActionType custom protocol in HKCU\Software\Classes. Action button might not work"
+                $ErrorMessage = $_.Exception.Message
+                Write-Log -Level Error -Message "Error message: $ErrorMessage"
+            }
+        }
     }
 }
 
@@ -855,7 +870,7 @@ function Write-CustomActionScript() {
     [CmdletBinding()]
     param (
         [Parameter(Position="0")]
-        [ValidateSet("ToastRunApplicationID","ToastRunPackageID","ToastRunUpdateID","ToastReboot","InvokePSScriptAsUser")]
+        [ValidateSet("ToastRunApplicationID", "ToastRunPackageID", "ToastRunUpdateID", "ToastReboot", "InvokePSScriptAsUser", "ToastRunPSBase64")]
         [string]$Type,
         [Parameter(Position="1")]
         [String]$Path = $global:CustomScriptsPath
@@ -1427,6 +1442,50 @@ Add-Type -ReferencedAssemblies 'System', 'System.Runtime.InteropServices' -TypeD
                 Write-Log -Level Error -Message "Error message: $ErrorMessage"
             }
         }
+
+        ToastRunPSBase64 {
+            try
+            {
+                $CMDFileName = $Type + '.cmd'
+                $CMDFilePath = $Path + '\' + $CMDFileName
+                try
+                {
+                    New-Item -Path $Path -Name $CMDFileName -Force -OutVariable PathInfo | Out-Null
+                }
+                catch
+                {
+                    $ErrorMessage = $_.Exception.Message
+                    Write-Log -Level Error -Message "Error message: $ErrorMessage"
+                }
+                try
+                {
+                    $GetCustomScriptPath = $PathInfo.FullName
+                    [String]$Script = "
+                    set passedArg=%1
+                    :: remove part before : from passed string
+                    set base64=%passedArg:*:=%
+                    powershell.exe -ExecutionPolicy Bypass -NoLogo -NonInteractive -NoProfile -WindowStyle Hidden -EncodedCommand %base64%"
+                    if (-NOT[string]::IsNullOrEmpty($Script))
+                    {
+                        Out-File -FilePath $GetCustomScriptPath -InputObject $Script -Encoding ASCII -Force
+                    }
+                }
+                catch
+                {
+                    Write-Log -Level Error "Failed to create the custom .cmd script for $Type. Action button might not work"
+                    $ErrorMessage = $_.Exception.Message
+                    Write-Log -Level Error -Message "Error message: $ErrorMessage"
+                }
+            }
+            catch
+            {
+                Write-Log -Level Error "Failed to create the custom .cmd script for $Type. Action button might not work"
+                $ErrorMessage = $_.Exception.Message
+                Write-Log -Level Error -Message "Error message: $ErrorMessage"
+            }
+            # Do not run another type; break
+            Break
+        }
     }
 }
 
@@ -1749,6 +1808,12 @@ if(-NOT[string]::IsNullOrEmpty($Xml)) {
     }
 }
 
+if ($ActionButton1Content -match "^ToastRunPSBase64:\s*$") {
+    Write-Log -Level Error -Message "Error. Incomplete Value in the $Config file Action1 tag"
+    Write-Log -Level Error -Message "Error. You have to specify also the base64 encoded PowerShell command: like ToastRunPSBase64:bQBrAGQAaQByACAAQwA6AFwAdABlAG0AcABcAGIAYQBzAGUANgA0AA=="
+    Exit 1
+}
+
 # Check if toast is enabled in config.xml
 if ($ToastEnabled -ne "True") {
     Write-Log -Message "Toast notification is not enabled. Please check $Config file"
@@ -2043,11 +2108,13 @@ if ($CreateScriptsProtocolsEnabled -eq "True") {
                     Write-CustomActionRegistry -ActionType ToastRunApplicationID
                     Write-CustomActionRegistry -ActionType ToastRunPackageID
                     Write-CustomActionRegistry -ActionType ToastRunUpdateID
+                    Write-CustomActionRegistry -ActionType ToastRunPSBase64
                     Write-CustomActionScript -Type ToastReboot
                     Write-CustomActionScript -Type ToastRunApplicationID
                     Write-CustomActionScript -Type ToastRunPackageID
                     Write-CustomActionScript -Type ToastRunUpdateID
                     Write-CustomActionScript -Type InvokePSScriptAsUser
+                    Write-CustomActionScript -Type ToastRunPSBase64
                     New-ItemProperty -Path $global:RegistryPath -Name $RegistryName -Value $global:ScriptVersion -PropertyType "String" -Force | Out-Null
                 }
                 catch { 
