@@ -1,3 +1,7 @@
+[README.md](https://raw.githubusercontent.com/imabdk/Toast-Notification-Script/6c54ca160089e489444a0b8aeb382acc1fc68f5e/README.md) from the [original repo](https://github.com/imabdk/Toast-Notification-Script) as it existed on 2025-01-11 is as follows:
+
+___
+
 # Toast Notification Script
 
 ## Current version: 2.3.0
